@@ -68,8 +68,8 @@ func main() {
 	var resp *http.Response
 	var conf ini.File
 	var host string = "frp.iotserv.com"
-	if args["-host"] != nil {
-		host = args["-host"].(string)
+	if args["-h"] != nil {
+		host = args["-h"].(string)
 	}
 	if args["-u"] != nil {
 		user := args["-u"].(string)
