@@ -30,10 +30,10 @@ import (
 	docopt "github.com/docopt/docopt-go"
 	ini "github.com/vaughan0/go-ini"
 
-	"github.com/fatedier/frp/client"
-	"github.com/fatedier/frp/models/config"
-	"github.com/fatedier/frp/utils/log"
-	"github.com/fatedier/frp/utils/version"
+	"frp/client"
+	"frp/models/config"
+	"frp/utils/log"
+	"frp/utils/version"
 )
 
 var (
@@ -43,35 +43,54 @@ var (
 var usage string = `frpc is the client of frp
 
 Usage: 
-    frpc [-c config_file] [-L log_file] [--log-level=<log_level>] [--server-addr=<server_addr>]
+    frpc [-h 配置文件服务器] [-u 用户名] [-c config_file] [-L log_file] [--log-level=<log_level>] [--server-addr=<server_addr>]
     frpc [-c config_file] --reload
     frpc -h | --help
     frpc -v | --version
 
 Options:
-    -c config_file              set config file
-    -L log_file                 set output log file, including console
-    --log-level=<log_level>     set log level: debug, info, warn, error
-    --server-addr=<server_addr> addr which frps is listening for, example: 0.0.0.0:7000
-    --reload                    reload configure file without program exit
-    -h --help                   show this screen
-    -v --version                show version
+	-h host                     set config server host eg:frp.iotserv.com
+	-u user                     set Common user at frp.iotserv.com or other config server
+	-c config_file              set config file
+	-L log_file                 set output log file, including console
+	--log-level=<log_level>     set log level: debug, info, warn, error
+	--server-addr=<server_addr> addr which frps is listening for, example: 0.0.0.0:7000
+	--reload                    reload configure file without program exit
+	--help                      show this screen
+	-v --version                show version
 `
 
 func main() {
 	var err error
-	confFile := "./frps.ini"
+	confFile := "./frpc.ini"
 	// the configures parsed from file will be replaced by those from command line if exist
 	args, err := docopt.Parse(usage, nil, true, version.Full(), false)
-
+	var resp *http.Response
+	var conf ini.File
+	var host string = "frp.iotserv.com"
+	if args["-host"] != nil {
+		host = args["-host"].(string)
+	}
+	if args["-u"] != nil {
+		user := args["-u"].(string)
+		resp, err = http.Get("http://"+host+"/api/get-frc-conf?user="+user)
+		if err != nil {
+			panic(err)
+		}
+		conf, err = ini.Load(resp.Body)
+		//conf, err := ini.LoadFile(confFile)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
 	if args["-c"] != nil {
 		confFile = args["-c"].(string)
-	}
-
-	conf, err := ini.LoadFile(confFile)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		conf, err = ini.LoadFile(confFile)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	}
 
 	config.ClientCommonCfg, err = config.LoadClientCommonConf(conf)
