@@ -21,8 +21,10 @@ import (
 	"github.com/julienschmidt/httprouter"
 	ini "github.com/vaughan0/go-ini"
 
-	"github.com/fatedier/frp/models/config"
-	"github.com/fatedier/frp/utils/log"
+	"frp/models/config"
+	"frp/utils/log"
+	_"frp/models/msg"
+	_"fmt"
 )
 
 type GeneralResponse struct {
@@ -39,6 +41,9 @@ func (svr *Service) apiReload(w http.ResponseWriter, r *http.Request, _ httprout
 	var (
 		buf []byte
 		res ReloadResp
+		conf ini.File
+		err error
+		resp *http.Response
 	)
 	defer func() {
 		log.Info("Http response [/api/reload]: code [%d]", res.Code)
@@ -47,8 +52,15 @@ func (svr *Service) apiReload(w http.ResponseWriter, r *http.Request, _ httprout
 	}()
 
 	log.Info("Http request: [/api/reload]")
-
-	conf, err := ini.LoadFile(config.ClientCommonCfg.ConfigFile)
+	if config.ClientCommonCfg.Host == "" {
+		conf, err = ini.LoadFile("./frpc.ini")
+	}else {
+		resp, err = http.Get("http://"+config.ClientCommonCfg.Host+"/api/get-frc-conf?user="+config.ClientCommonCfg.User)
+		if err != nil {
+			panic(err)
+		}
+		conf, err = ini.Load(resp.Body)
+	}
 	if err != nil {
 		res.Code = 1
 		res.Msg = err.Error()
@@ -71,8 +83,8 @@ func (svr *Service) apiReload(w http.ResponseWriter, r *http.Request, _ httprout
 		log.Error("reload frpc proxy config error: %v", err)
 		return
 	}
-
 	svr.ctl.reloadConf(pxyCfgs, vistorCfgs)
 	log.Info("success reload conf")
+	//svr.Close()
 	return
 }
