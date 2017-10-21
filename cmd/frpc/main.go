@@ -45,6 +45,7 @@ var usage string = `frpc is the client of frp
 Usage: 
     frpc [-h 配置文件服务器] [-u 用户名] [-c config_file] [-L log_file] [--log-level=<log_level>] [--server-addr=<server_addr>]
     frpc [-c config_file] --reload
+	frpc [-h 配置文件服务器] [-u 用户名] --reload
     frpc -h | --help
     frpc -v | --version
 
@@ -67,10 +68,12 @@ func main() {
 	args, err := docopt.Parse(usage, nil, true, version.Full(), false)
 	var resp *http.Response
 	var conf ini.File
-	var host string = "frp.iotserv.com"
+	host := "frp.iotserv.com"
+//指定配置服务器
 	if args["-h"] != nil {
 		host = args["-h"].(string)
 	}
+//指定配置文件的common user用户名
 	if args["-u"] != nil {
 		user := args["-u"].(string)
 		resp, err = http.Get("http://"+host+"/api/get-frc-conf?user="+user)
@@ -86,7 +89,18 @@ func main() {
 	}
 	if args["-c"] != nil {
 		confFile = args["-c"].(string)
+		config.ClientCommonCfg.Host = ""
 		conf, err = ini.LoadFile(confFile)
+		host = ""
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+//加载本地默认配置
+	if (args["-c"] == nil) && (args["-u"] == nil) {
+		conf, err = ini.LoadFile(confFile)
+		host = ""
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -99,7 +113,7 @@ func main() {
 		os.Exit(1)
 	}
 	config.ClientCommonCfg.ConfigFile = confFile
-
+	config.ClientCommonCfg.Host = host
 	// check if reload command
 	if args["--reload"] != nil {
 		if args["--reload"].(bool) {
@@ -112,7 +126,6 @@ func main() {
 
 			authStr := "Basic " + base64.StdEncoding.EncodeToString([]byte(config.ClientCommonCfg.AdminUser+":"+
 				config.ClientCommonCfg.AdminPwd))
-
 			req.Header.Add("Authorization", authStr)
 			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
