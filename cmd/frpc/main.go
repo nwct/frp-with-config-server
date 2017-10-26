@@ -68,7 +68,7 @@ func main() {
 	args, err := docopt.Parse(usage, nil, true, version.Full(), false)
 	var resp *http.Response
 	var conf ini.File
-	host := "frp.iotserv.com"
+	host := "xcx.lu8.top"
 //指定配置服务器
 	if args["-h"] != nil {
 		host = args["-h"].(string)
@@ -76,7 +76,7 @@ func main() {
 //指定配置文件的common user用户名
 	if args["-u"] != nil {
 		user := args["-u"].(string)
-		resp, err = http.Get("http://"+host+"/api/get-frc-conf?user="+user)
+		resp, err = http.Get("https://"+host+"/cgi-bin/api?user="+user)
 		if err != nil {
 			panic(err)
 		}
