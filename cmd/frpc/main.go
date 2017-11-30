@@ -76,7 +76,7 @@ func main() {
 //指定配置文件的common user用户名
 	if args["-u"] != nil {
 		user := args["-u"].(string)
-		resp, err = http.Get("http://"+host+"/cgi-bin/api?user="+user)
+		resp, err = http.Get("http://"+host+"/api?user="+user)
 		if err != nil {
 			panic(err)
 		}
@@ -89,7 +89,7 @@ func main() {
 	}
 	if args["-c"] != nil {
 		confFile = args["-c"].(string)
-		config.ClientCommonCfg.Host = ""
+//		config.ClientCommonCfg.Host = ""
 		conf, err = ini.LoadFile(confFile)
 		host = ""
 		if err != nil {
@@ -113,7 +113,7 @@ func main() {
 		os.Exit(1)
 	}
 	config.ClientCommonCfg.ConfigFile = confFile
-	config.ClientCommonCfg.Host = host
+//	config.ClientCommonCfg.Host = host
 	// check if reload command
 	if args["--reload"] != nil {
 		if args["--reload"].(bool) {
